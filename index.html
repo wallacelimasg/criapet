@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CriaPet — Gestão inteligente para criadores profissionais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          graphite: "#22252A",
+          ivory: "#F6F4EF",
+          olive: "#6B7A5E",
+          clay: "#B4682E",
+          brand: {
+            DEFAULT: "#4CAF50",
+            light: "#67C46B",
+            green: "#4CAF50",
+            dark: "#2E7D32",
+            darker: "#1F5723",
+            beige: "#F8F5EF",
+            ink: "#1B1F1B",
+          },
+        },
+        fontFamily: {
+          display: ["Fraunces", "Georgia", "serif"],
+          sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        },
+        boxShadow: {
+          soft: "0 2px 8px 0 rgb(27 31 27 / 0.05)",
+          card: "0 8px 24px -8px rgb(27 31 27 / 0.12)",
+          lifted: "0 20px 48px -12px rgb(46 125 50 / 0.25)",
+          "glow-brand": "0 0 0 1px rgb(76 175 80 / 0.25), 0 0 24px 0 rgb(76 175 80 / 0.35)",
+          "glow-brand-lg": "0 0 0 1px rgb(76 175 80 / 0.3), 0 8px 40px -4px rgb(76 175 80 / 0.45)",
+        },
+        animation: {
+          float: "float 6s ease-in-out infinite",
+          "glow-pulse": "glow-pulse 3.5s ease-in-out infinite",
+          "spin-slow": "spin-slow 14s linear infinite",
+        },
+        keyframes: {
+          float: {
+            "0%, 100%": { transform: "translateY(0)" },
+            "50%": { transform: "translateY(-8px)" },
+          },
+          "glow-pulse": {
+            "0%, 100%": { opacity: "0.55", transform: "scale(1)" },
+            "50%": { opacity: "1", transform: "scale(1.06)" },
+          },
+          "spin-slow": {
+            "0%": { transform: "rotate(0deg)" },
+            "100%": { transform: "rotate(360deg)" },
+          },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background:#0E1210; }
+  .font-display { font-family: 'Fraunces', Georgia, serif; }
+  ::selection { background-color: #4caf5033; }
+
+  .glass-dark {
+    background: rgb(34 37 42 / 0.6);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgb(255 255 255 / 0.08);
+  }
+  .glass-card {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.02));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgb(255 255 255 / 0.08);
+  }
+  .bg-grid-dark {
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    background-size: 42px 42px;
+  }
+  .text-gradient-brand {
+    background: linear-gradient(90deg, #67c46b, #4caf50 55%, #b4682e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .nav-link { position: relative; transition: color 0.2s ease; }
+  .nav-link::after {
+    content: ""; position: absolute; left: 0; bottom: -2px; width: 0%; height: 1px;
+    background-color: #67C46B; transition: width 0.25s ease;
+  }
+  .nav-link:hover::after { width: 100%; }
+  .nav-link:hover { color: #F6F4EF; }
+
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  .reveal-scale { opacity: 0; transform: scale(.94); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+  .reveal-scale.in { opacity: 1; transform: scale(1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body class="dark-scope min-h-screen bg-[#0E1210] text-ivory antialiased">
+
+<!-- HEADER -->
+<header id="site-header" class="fixed inset-x-0 top-0 z-50 transition-all duration-500 py-5">
+  <div id="header-inner" class="mx-auto flex max-w-7xl items-center justify-between rounded-2xl px-5 py-3 transition-all duration-500 sm:px-6 bg-transparent">
+    <a href="#" class="flex items-center gap-2.5 shrink-0 group">
+      <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-light to-brand-dark text-white shadow-glow-brand transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="9.5" r="1.75"/><circle cx="11.5" cy="6.5" r="1.75"/><circle cx="16.5" cy="7.5" r="1.75"/><circle cx="19.5" cy="12" r="1.75"/><path d="M8 20c-1.7 0-3-1.2-3-2.8 0-2 1.9-3.4 3.8-4.6 1-.6 1.9-1.4 3-1.4s2 .8 3 1.4c2 1.2 4.2 2.4 4.2 4.6 0 1.6-1.5 2.8-3.2 2.8-1.4 0-2-.6-3.8-.6S9.4 20 8 20Z"/></svg>
+      </span>
+      <span class="font-display text-xl font-semibold text-ivory">CriaPet</span>
+    </a>
+
+    <nav class="hidden items-center gap-8 lg:flex">
+      <a href="#recursos" class="nav-link text-sm font-medium text-ivory/70">Recursos</a>
+      <a href="#como-funciona" class="nav-link text-sm font-medium text-ivory/70">Como funciona</a>
+      <a href="#planos" class="nav-link text-sm font-medium text-ivory/70">Planos</a>
+      <a href="#depoimentos" class="nav-link text-sm font-medium text-ivory/70">Depoimentos</a>
+      <a href="#faq" class="nav-link text-sm font-medium text-ivory/70">FAQ</a>
+    </nav>
+
+    <div class="hidden items-center gap-3 lg:flex">
+      <a href="login.html" class="text-sm font-medium text-ivory/75 transition-colors hover:text-ivory">Entrar</a>
+      <a href="cadastro.html" class="rounded-full bg-gradient-to-r from-brand-light to-brand-dark px-5 py-2.5 text-sm font-semibold text-white shadow-glow-brand transition-all hover:-translate-y-0.5 hover:shadow-glow-brand-lg">Teste grátis</a>
+    </div>
+
+    <button id="menu-btn" type="button" aria-label="Abrir menu" class="flex h-10 w-10 items-center justify-center rounded-full text-ivory lg:hidden">
+      <svg id="menu-icon-open" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg id="menu-icon-close" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="glass-dark mx-4 mt-2 hidden rounded-2xl px-5 pb-6 pt-2 lg:hidden">
+    <nav class="flex flex-col gap-1">
+      <a href="#recursos" class="mobile-link rounded-lg px-2 py-3 text-base font-medium text-ivory/80 hover:bg-white/5 hover:text-white">Recursos</a>
+      <a href="#como-funciona" class="mobile-link rounded-lg px-2 py-3 text-base font-medium text-ivory/80 hover:bg-white/5 hover:text-white">Como funciona</a>
+      <a href="#planos" class="mobile-link rounded-lg px-2 py-3 text-base font-medium text-ivory/80 hover:bg-white/5 hover:text-white">Planos</a>
+      <a href="#depoimentos" class="mobile-link rounded-lg px-2 py-3 text-base font-medium text-ivory/80 hover:bg-white/5 hover:text-white">Depoimentos</a>
+      <a href="#faq" class="mobile-link rounded-lg px-2 py-3 text-base font-medium text-ivory/80 hover:bg-white/5 hover:text-white">FAQ</a>
+    </nav>
+    <div class="mt-3 flex flex-col gap-2 border-t border-white/10 pt-4">
+      <a href="login.html" class="rounded-full border border-white/15 px-5 py-3 text-center text-sm font-semibold text-ivory">Entrar</a>
+      <a href="cadastro.html" class="mobile-link rounded-full bg-gradient-to-r from-brand-light to-brand-dark px-5 py-3 text-center text-sm font-semibold text-white">Teste grátis</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="relative flex min-h-[92svh] items-center overflow-hidden bg-[#0E1210] pb-16 pt-32 sm:pt-40">
+  <div class="absolute inset-0 bg-grid-dark" style="mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 40%,transparent 100%)"></div>
+  <div aria-hidden="true" class="pointer-events-none absolute -top-40 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-brand-green/25 blur-[140px]"></div>
+  <div aria-hidden="true" class="pointer-events-none absolute -bottom-32 right-[8%] h-[380px] w-[380px] rounded-full bg-clay/20 blur-[120px]"></div>
+
+  <div class="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-16 px-5 sm:px-8 lg:grid-cols-2 lg:gap-12">
+    <div>
+      <span class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-brand-light backdrop-blur-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c.5 3.4 1.4 5.6 3.1 7.4 1.8 1.7 4 2.6 7.4 3.1-3.4.5-5.6 1.4-7.4 3.1-1.7 1.8-2.6 4-3.1 7.4-.5-3.4-1.4-5.6-3.1-7.4-1.8-1.7-4-2.6-7.4-3.1 3.4-.5 5.6-1.4 7.4-3.1 1.7-1.8 2.6-4 3.1-7.4Z"/></svg>
+        Feito para criadores profissionais
+      </span>
+
+      <h1 class="font-display text-4xl font-semibold leading-[1.08] text-ivory sm:text-5xl lg:text-[3.4rem]">
+        A plataforma completa para administrar seu <span class="text-gradient-brand">criatório</span>.
+      </h1>
+
+      <p class="mt-6 max-w-xl text-lg leading-relaxed text-ivory/60">
+        Controle animais, pedigree, cruzamentos, vacinas, reservas, clientes, financeiro e contratos em um único sistema.
+      </p>
+
+      <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+        <a href="cadastro.html" class="rounded-full bg-gradient-to-r from-brand-light to-brand-dark px-8 py-3.5 text-center text-base font-semibold text-white shadow-glow-brand-lg transition-transform hover:-translate-y-0.5">Teste grátis</a>
+        <a href="#recursos" class="rounded-full border border-white/15 bg-white/5 px-8 py-3.5 text-center text-base font-semibold text-ivory backdrop-blur-sm transition-colors hover:border-white/30 hover:bg-white/10">Ver demonstração</a>
+      </div>
+
+      <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium text-ivory/55">
+        <li class="flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>14 dias grátis</li>
+        <li class="flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Sem cartão</li>
+        <li class="flex items-center gap-1.5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Suporte especializado</li>
+      </ul>
+    </div>
+
+    <div class="relative mx-auto w-full max-w-md lg:max-w-none">
+      <div class="glass-card relative rounded-3xl p-8 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]">
+        <div class="mb-6 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/15 text-brand-light">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v3.5a1.5 1.5 0 0 0 1.5 1.5H10M18 7v3.5A1.5 1.5 0 0 1 16.5 12H14M12 14v3M6 17v-1.5A1.5 1.5 0 0 1 7.5 14H10M18 17v-1.5a1.5 1.5 0 0 0-1.5-1.5H14"/></svg>
+            </span>
+            <div>
+              <p class="text-sm font-semibold text-ivory">Árvore genealógica</p>
+              <p class="text-xs text-ivory/45">Thor · Golden Retriever</p>
+            </div>
+          </div>
+          <span class="rounded-full bg-brand-green/15 px-3 py-1 text-[11px] font-semibold text-brand-light">Pedigree CBKC</span>
+        </div>
+
+        <svg viewBox="0 0 320 180" class="w-full text-white/15">
+          <g stroke="currentColor" stroke-width="1.5" fill="none">
+            <path d="M160 150 V110 M160 110 H80 M160 110 H240 M80 110 V70 M240 110 V70 M80 70 H40 M80 70 H120 M240 70 H200 M240 70 H280" />
+          </g>
+          <g fill="#67C46B"><circle cx="160" cy="150" r="9" /></g>
+          <g fill="#4CAF50"><circle cx="80" cy="110" r="7" /><circle cx="240" cy="110" r="7" /></g>
+          <g fill="#4CAF50" fill-opacity="0.55">
+            <circle cx="40" cy="70" r="5.5" /><circle cx="120" cy="70" r="5.5" /><circle cx="200" cy="70" r="5.5" /><circle cx="280" cy="70" r="5.5" />
+          </g>
+        </svg>
+
+        <div class="mt-4 grid grid-cols-3 gap-3">
+          <div class="rounded-xl border border-white/8 bg-white/5 px-3 py-2.5 text-center"><p class="font-display text-lg font-semibold text-ivory">12</p><p class="text-[11px] text-ivory/45">Ninhadas</p></div>
+          <div class="rounded-xl border border-white/8 bg-white/5 px-3 py-2.5 text-center"><p class="font-display text-lg font-semibold text-ivory">8</p><p class="text-[11px] text-ivory/45">Cruzamentos</p></div>
+          <div class="rounded-xl border border-white/8 bg-white/5 px-3 py-2.5 text-center"><p class="font-display text-lg font-semibold text-ivory">F4</p><p class="text-[11px] text-ivory/45">Geração</p></div>
+        </div>
+      </div>
+
+      <div class="glass-card absolute -left-6 top-10 hidden animate-float items-center gap-2.5 rounded-2xl px-4 py-3 shadow-glow-brand sm:flex">
+        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-green/20 text-brand-light">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-9.8-9.4C.7 7.7 2.3 4 6 4c2 0 3.4 1 4 2.3C10.6 5 12 4 14 4c3.7 0 5.3 3.7 3.8 7.1-2.3 4.8-9.8 9.4-9.8 9.4Z"/><path d="M4.5 11h2.3l1.4-2.6L10 13l1.6-3.4h1.7l1 1.4H17"/></svg>
+        </span>
+        <div><p class="text-xs font-semibold text-ivory">Vacina em dia</p><p class="text-[11px] text-ivory/45">Luna · V10</p></div>
+      </div>
+
+      <div class="absolute -bottom-6 -right-4 hidden animate-float items-center gap-2.5 rounded-2xl bg-gradient-to-br from-brand-light to-brand-dark px-4 py-3 text-white shadow-glow-brand-lg sm:flex" style="animation-delay:1.5s">
+        <div><p class="text-[11px] text-white/70">Receita do mês</p><p class="font-display text-lg font-semibold">R$ 24.380</p></div>
+      </div>
+
+      <span aria-hidden="true" class="absolute -right-10 -top-10 hidden h-20 w-20 items-center justify-center rounded-full border border-white/10 text-brand-light/40 animate-spin-slow sm:flex">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="9.5" r="1.75"/><circle cx="11.5" cy="6.5" r="1.75"/><circle cx="16.5" cy="7.5" r="1.75"/><circle cx="19.5" cy="12" r="1.75"/><path d="M8 20c-1.7 0-3-1.2-3-2.8 0-2 1.9-3.4 3.8-4.6 1-.6 1.9-1.4 3-1.4s2 .8 3 1.4c2 1.2 4.2 2.4 4.2 4.6 0 1.6-1.5 2.8-3.2 2.8-1.4 0-2-.6-3.8-.6S9.4 20 8 20Z"/></svg>
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="recursos" class="relative bg-[#101512] py-24">
+  <div class="mx-auto max-w-7xl px-5 sm:px-8">
+    <div class="reveal mx-auto max-w-2xl text-center">
+      <span class="text-sm font-semibold uppercase tracking-wide text-brand-light">Recursos</span>
+      <h2 class="mt-3 font-display text-3xl font-semibold text-ivory sm:text-4xl">Tudo que o seu criatório precisa, em um só lugar</h2>
+      <p class="mt-4 text-lg text-ivory/55">Módulos pensados especificamente para a rotina de quem cria com responsabilidade e pedigree.</p>
+    </div>
+
+    <div class="mt-16 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" id="features-grid"></div>
+  </div>
+</section>
+
+<!-- DASHBOARD PREVIEW -->
+<section class="relative bg-[#101512] py-24">
+  <div class="mx-auto max-w-7xl px-5 sm:px-8">
+    <div class="reveal mx-auto max-w-2xl text-center">
+      <span class="text-sm font-semibold uppercase tracking-wide text-brand-light">Painel</span>
+      <h2 class="mt-3 font-display text-3xl font-semibold text-ivory sm:text-4xl">Uma visão clara do seu criatório, todos os dias</h2>
+      <p class="mt-4 text-lg text-ivory/55">Ilustração do painel — os dados abaixo são apenas para demonstração.</p>
+    </div>
+
+    <div class="reveal-scale mt-14">
+      <div class="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-white/8 bg-[#161B18] shadow-[0_40px_100px_-24px_rgba(0,0,0,0.6)]">
+        <div class="flex items-center gap-2 border-b border-white/8 bg-white/[0.02] px-5 py-3">
+          <span class="h-2.5 w-2.5 rounded-full bg-red-400/70"></span>
+          <span class="h-2.5 w-2.5 rounded-full bg-yellow-400/70"></span>
+          <span class="h-2.5 w-2.5 rounded-full bg-brand-green/70"></span>
+          <span class="ml-3 text-xs font-medium text-ivory/35">app.criapet.com/dashboard</span>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 p-5 sm:p-8 lg:grid-cols-3">
+          <div class="lg:col-span-2">
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div class="rounded-xl border border-white/8 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.06]"><p class="font-display text-2xl font-semibold text-ivory">86</p><p class="mt-0.5 text-xs text-ivory/50">Total de animais</p></div>
+              <div class="rounded-xl border border-white/8 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.06]"><p class="font-display text-2xl font-semibold text-ivory">39</p><p class="mt-0.5 text-xs text-ivory/50">Machos</p></div>
+              <div class="rounded-xl border border-white/8 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.06]"><p class="font-display text-2xl font-semibold text-ivory">47</p><p class="mt-0.5 text-xs text-ivory/50">Fêmeas</p></div>
+              <div class="rounded-xl border border-white/8 bg-white/[0.03] p-4 transition-colors hover:bg-white/[0.06]"><p class="font-display text-2xl font-semibold text-ivory">12</p><p class="mt-0.5 text-xs text-ivory/50">Filhotes</p></div>
+            </div>
+
+            <div class="mt-6 rounded-xl border border-white/8 p-4">
+              <div class="mb-2 flex items-center justify-between">
+                <p class="text-sm font-semibold text-ivory">Receita mensal</p>
+                <p class="text-sm font-semibold text-brand-light">R$ 24.380</p>
+              </div>
+              <div class="h-40 w-full"><canvas id="revenueChart"></canvas></div>
+            </div>
+
+            <div class="mt-6 rounded-xl border border-white/8 p-4">
+              <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-ivory">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-brand-light"><path d="M12 3.5c-3.5 3-6 6.7-6 10a6 6 0 0 0 12 0c0-3.3-2.5-7-6-10Z"/><circle cx="12" cy="13.5" r="2.2"/></svg>
+                Próximos cruzamentos
+              </p>
+              <ul class="space-y-2">
+                <li class="flex items-center justify-between text-sm"><span class="text-ivory/70">Thor × Luna</span><span class="text-ivory/40">24 Ago</span></li>
+                <li class="flex items-center justify-between text-sm"><span class="text-ivory/70">Bento × Mel</span><span class="text-ivory/40">02 Set</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-6">
+            <div class="rounded-xl border border-white/8 p-4">
+              <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-ivory">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-brand-light"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/></svg>
+                Agenda de hoje
+              </p>
+              <ul class="space-y-3">
+                <li class="flex gap-3 text-sm"><span class="w-12 shrink-0 font-medium text-brand-light">09:00</span><span class="text-ivory/65">Consulta veterinária — Mel</span></li>
+                <li class="flex gap-3 text-sm"><span class="w-12 shrink-0 font-medium text-brand-light">11:30</span><span class="text-ivory/65">Entrega de filhote — Cliente Ana P.</span></li>
+                <li class="flex gap-3 text-sm"><span class="w-12 shrink-0 font-medium text-brand-light">15:00</span><span class="text-ivory/65">Avaliação de cio — Nina</span></li>
+              </ul>
+            </div>
+
+            <div class="rounded-xl border border-white/8 p-4">
+              <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-ivory">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-brand-light"><path d="M12 20.5s-7.5-4.6-9.8-9.4C.7 7.7 2.3 4 6 4c2 0 3.4 1 4 2.3C10.6 5 12 4 14 4c3.7 0 5.3 3.7 3.8 7.1-2.3 4.8-9.8 9.4-9.8 9.4Z"/></svg>
+                Vacinas
+              </p>
+              <ul class="space-y-2.5">
+                <li class="flex items-center justify-between text-sm"><div><p class="font-medium text-ivory/80">Thor</p><p class="text-xs text-ivory/45">V10 — reforço</p></div><span class="rounded-full bg-brand-green/15 px-2.5 py-1 text-[11px] font-semibold text-brand-light">Em dia</span></li>
+                <li class="flex items-center justify-between text-sm"><div><p class="font-medium text-ivory/80">Luna</p><p class="text-xs text-ivory/45">Antirrábica</p></div><span class="rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-semibold text-amber-400">Em 5 dias</span></li>
+                <li class="flex items-center justify-between text-sm"><div><p class="font-medium text-ivory/80">Bento</p><p class="text-xs text-ivory/45">Giárdia</p></div><span class="rounded-full bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-400">Atrasada</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BENEFITS -->
+<section class="relative overflow-hidden bg-[#0E1210] py-24">
+  <div aria-hidden="true" class="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[720px] -translate-x-1/2 rounded-full bg-brand-green/10 blur-[140px]"></div>
+  <div class="relative mx-auto max-w-7xl px-5 sm:px-8">
+    <div class="grid grid-cols-1 items-center gap-14 lg:grid-cols-2">
+      <div class="reveal">
+        <span class="text-sm font-semibold uppercase tracking-wide text-brand-light">Benefícios</span>
+        <h2 class="mt-3 font-display text-3xl font-semibold leading-tight text-ivory sm:text-4xl">Mais organização, menos trabalho manual</h2>
+        <p class="mt-4 max-w-md text-lg text-ivory/55">O CriaPet foi desenhado para devolver tempo ao criador — e esse tempo vale mais cuidado com os animais e com os clientes.</p>
+
+        <div class="mt-10 grid grid-cols-3 gap-4 max-w-md">
+          <div class="glass-card rounded-2xl p-4 text-center"><p class="font-display text-2xl font-semibold text-ivory counter" data-target="2400" data-suffix="+">0</p><p class="mt-1 text-[11px] leading-tight text-ivory/50">Animais cadastrados</p></div>
+          <div class="glass-card rounded-2xl p-4 text-center"><p class="font-display text-2xl font-semibold text-ivory counter" data-target="380" data-suffix="+">0</p><p class="mt-1 text-[11px] leading-tight text-ivory/50">Criatórios ativos</p></div>
+          <div class="glass-card rounded-2xl p-4 text-center"><p class="font-display text-2xl font-semibold text-ivory counter" data-target="98" data-suffix="%">0</p><p class="mt-1 text-[11px] leading-tight text-ivory/50">Satisfação</p></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2" id="benefits-grid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="como-funciona" class="relative bg-[#101512] py-24">
+  <div class="mx-auto max-w-7xl px-5 sm:px-8">
+    <div class="reveal mx-auto max-w-2xl text-center">
+      <span class="text-sm font-semibold uppercase tracking-wide text-brand-light">Como funciona</span>
+      <h2 class="mt-3 font-display text-3xl font-semibold text-ivory sm:text-4xl">Do cadastro à venda, em quatro passos</h2>
+    </div>
+
+    <div class="relative mt-16 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="absolute left-0 right-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-white/15 to-transparent lg:block" aria-hidden="true"></div>
+
+      <div class="reveal relative">
+        <div class="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-light to-brand-dark font-display text-lg font-semibold text-white shadow-glow-brand">01</div>
+        <h3 class="mt-5 font-display text-lg font-semibold text-ivory">Cadastre seu criatório</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ivory/55">Crie sua conta e configure os dados do seu canil ou gatil em minutos.</p>
+      </div>
+      <div class="reveal relative">
+        <div class="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-light to-brand-dark font-display text-lg font-semibold text-white shadow-glow-brand">02</div>
+        <h3 class="mt-5 font-display text-lg font-semibold text-ivory">Cadastre seus animais</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ivory/55">Adicione fichas, pedigree e árvore genealógica de cada animal.</p>
+      </div>
+      <div class="reveal relative">
+        <div class="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-light to-brand-dark font-display text-lg font-semibold text-white shadow-glow-brand">03</div>
+        <h3 class="mt-5 font-display text-lg font-semibold text-ivory">Gerencie todas as informações</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ivory/55">Vacinas, cruzamentos, financeiro e clientes, tudo em um só painel.</p>
+      </div>
+      <div class="reveal relative">
+        <div class="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-light to-brand-dark font-display text-lg font-semibold text-white shadow-glow-brand">04</div>
+        <h3 class="mt-5 font-display text-lg font-semibold text-ivory">Venda com mais organização</h3>
+        <p class="mt-2 text-sm leading-relaxed text-ivory/55">Reservas, contratos e portal do cliente para um processo mais profissional.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="planos" class="relative bg-[#0E1210] py-24">
+  <div class="mx-auto max-w-7xl px-5 sm:px-8">
+    <div class="reveal mx-auto max-w-2xl text-center">
+      <span class="text-sm font-semibold uppercase tracking-wide text-brand-light">Planos</span>
+      <h2 class="mt-3 font-display text-3xl font-semibold text-ivory sm:text-4xl">Um plano para cada tamanho de criatório</h2>
+      <p class="mt-4 text-lg text-ivory/55">Cancele quando quiser. Sem contratos de fidelidade.</p>
+    </div>
+
+    <div class="mt-16 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:items-center">
+      <div class="reveal-scale glass-card relative rounded-3xl p-8 text-ivory transition-transform duration-300 hover:-translate-y-1.5">
+        <h3 class="font-display text-xl font-semibold">Básico</h3>
+        <p class="mt-1.5 text-sm text-ivory/55">Para quem está começando a organizar o criatório.</p>
+        <p class="mt-6 flex items-baseline gap-1"><span class="font-display text-3xl font-semibold">R$ 49,90</span><span class="text-ivory/45">/mês</span></p>
+        <ul class="mt-7 space-y-3">
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Cadastro de até 1 animal</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">1 usuário</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Agenda de saúde</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Financeiro simples</span></li>
+        </ul>
+        <a href="cadastro.html" class="mt-8 block rounded-full bg-white/5 py-3 text-center text-sm font-semibold text-ivory transition-all hover:bg-white/10">Começar agora</a>
+      </div>
+
+      <div class="reveal-scale relative rounded-3xl border border-brand-green/40 bg-gradient-to-b from-[#16231a] to-[#0e1512] p-8 text-white shadow-glow-brand-lg transition-transform duration-300 hover:-translate-y-1.5 lg:scale-105">
+        <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-brand-light to-brand-dark px-4 py-1 text-xs font-semibold text-white shadow-glow-brand">Mais popular</span>
+        <h3 class="font-display text-xl font-semibold">Profissional</h3>
+        <p class="mt-1.5 text-sm text-white/60">Para criatórios em crescimento, com mais de um animal.</p>
+        <p class="mt-6 flex items-baseline gap-1"><span class="font-display text-3xl font-semibold">R$ 129,90</span><span class="text-white/50">/mês</span></p>
+        <ul class="mt-7 space-y-3">
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-white/80">Cadastro de até 2 animais</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-white/80">3 usuários</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-white/80">Reservas e contratos digitais</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-white/80">Portal do cliente e comunidade</span></li>
+        </ul>
+        <a href="cadastro.html" class="mt-8 block rounded-full bg-gradient-to-r from-brand-light to-brand-dark py-3 text-center text-sm font-semibold text-white transition-all hover:shadow-glow-brand">Começar agora</a>
+      </div>
+
+      <div class="reveal-scale glass-card relative rounded-3xl p-8 text-ivory transition-transform duration-300 hover:-translate-y-1.5">
+        <h3 class="font-display text-xl font-semibold">Pro</h3>
+        <p class="mt-1.5 text-sm text-ivory/55">Para criatórios estabelecidos, sem limites de operação.</p>
+        <p class="mt-6 flex items-baseline gap-1"><span class="font-display text-3xl font-semibold">R$ 249,90</span><span class="text-ivory/45">/mês</span></p>
+        <ul class="mt-7 space-y-3">
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Cadastro ilimitado de animais</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Usuários ilimitados</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Notificações automáticas por WhatsApp</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Relatórios avançados</span></li>
+          <li class="flex items-start gap-2.5 text-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-brand-light"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span class="text-ivory/70">Módulo Loja (produtos e vendas)</span></li>
+        </ul>
+        <a href="cadastro.html" class="mt-8 block rounded-full bg-white/5 py-3 text-center text-sm font-semibold text-ivory transition-all hover:bg-white/10">Começar agora</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="depoimentos" class="relative bg-[#101512] py-24">
+  <div class="mx-auto max-w-7xl px-5 sm:px-8">
+    <div class="reveal mx-auto max-w-2xl text-center">
+      <span class="text-sm font-semibold uppercase tracking-wide text-brand-light">Depoimentos</span>
+      <h2 class="mt-3 font-display text-3xl font-semibold text-ivory sm:text-4xl">Criadores que já organizaram sua rotina</h2>
+    </div>
+
+    <div class="mt-16 grid grid-cols-1 gap-6 md:grid-cols-3" id="testimonials-grid"></div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="relative bg-[#0E1210] py-24">
+  <div class="mx-auto max-w-3xl px-5 sm:px-8">
+    <div class="reveal text-center">
+      <span class="text-sm font-semibold uppercase tracking-wide text-brand-light">FAQ</span>
+      <h2 class="mt-3 font-display text-3xl font-semibold text-ivory sm:text-4xl">Perguntas frequentes</h2>
+    </div>
+
+    <div class="reveal glass-card mt-12 divide-y divide-white/8 rounded-2xl" id="faq-list"></div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="relative overflow-hidden bg-gradient-to-br from-brand-darker via-brand-dark to-[#0e1512] py-20">
+  <div aria-hidden="true" class="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-green/30 blur-[140px] animate-glow-pulse"></div>
+
+  <div class="reveal-scale relative mx-auto max-w-2xl px-5 text-center sm:px-8">
+    <h2 class="font-display text-3xl font-semibold text-white sm:text-4xl">Pronto para organizar seu criatório?</h2>
+    <p class="mt-4 text-lg text-white/75">Comece hoje e leve mais profissionalismo para o seu dia a dia.</p>
+    <a href="cadastro.html" class="mt-8 inline-block rounded-full bg-white px-9 py-3.5 text-base font-semibold text-brand-dark shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transition-transform hover:-translate-y-0.5">Começar gratuitamente</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="border-t border-white/5 bg-[#0B0D0B] py-16 text-white/60">
+  <div class="mx-auto max-w-7xl px-5 sm:px-8">
+    <div class="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-light to-brand-dark text-white shadow-glow-brand">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="9.5" r="1.75"/><circle cx="11.5" cy="6.5" r="1.75"/><circle cx="16.5" cy="7.5" r="1.75"/><circle cx="19.5" cy="12" r="1.75"/><path d="M8 20c-1.7 0-3-1.2-3-2.8 0-2 1.9-3.4 3.8-4.6 1-.6 1.9-1.4 3-1.4s2 .8 3 1.4c2 1.2 4.2 2.4 4.2 4.6 0 1.6-1.5 2.8-3.2 2.8-1.4 0-2-.6-3.8-.6S9.4 20 8 20Z"/></svg>
+          </span>
+          <span class="font-display text-xl font-semibold text-white">CriaPet</span>
+        </div>
+        <p class="mt-4 max-w-xs text-sm leading-relaxed">Gestão inteligente para criadores profissionais.</p>
+        <div class="mt-5 flex gap-3">
+          <a href="https://wa.me/5521968159415?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20o%20CriaPet." target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-brand-green hover:text-brand-ink" aria-label="WhatsApp">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.9-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.6-1.9-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.4 0-.5s-.6-1.4-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.1.2 1.8 2.8 4.4 3.8.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.6-.6 1.8-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.5-.3Z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>
+          </a>
+          <a href="https://instagram.com/criapet" target="_blank" rel="noopener noreferrer" class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-brand-green hover:text-brand-ink" aria-label="Instagram">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/><circle cx="12" cy="12" r="3.8"/><circle cx="17.2" cy="6.8" r="0.9" fill="currentColor" stroke="none"/></svg>
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-white">Produto</p>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a href="#recursos" class="transition-colors hover:text-white">Recursos</a></li>
+          <li><a href="#como-funciona" class="transition-colors hover:text-white">Como funciona</a></li>
+          <li><a href="#planos" class="transition-colors hover:text-white">Planos</a></li>
+          <li><a href="#faq" class="transition-colors hover:text-white">FAQ</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-white">Conta</p>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a href="login.html" class="transition-colors hover:text-white">Entrar</a></li>
+          <li><a href="cadastro.html" class="transition-colors hover:text-white">Criar conta</a></li>
+          <li><a href="#" class="transition-colors hover:text-white">Esqueci minha senha</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <p class="text-sm font-semibold text-white">Legal</p>
+        <ul class="mt-4 space-y-2.5 text-sm">
+          <li><a href="#" class="transition-colors hover:text-white">Termos de Uso</a></li>
+          <li><a href="#" class="transition-colors hover:text-white">Política de Privacidade</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-14 border-t border-white/10 pt-6 text-xs text-white/45">
+      © <span id="year"></span> CriaPet. Todos os direitos reservados.
+    </div>
+  </div>
+</footer>
+
+<!-- WHATSAPP FLOAT -->
+<a href="https://wa.me/5521968159415?text=Ol%C3%A1!%20Preciso%20de%20ajuda%20com%20o%20CriaPet." target="_blank" rel="noopener noreferrer" class="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-brand-dark px-5 py-3 text-sm font-medium text-white shadow-lifted transition-transform hover:scale-105">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.6-.8-1.9-.9-.2-.1-.4-.1-.6.1-.2.3-.7.9-.8 1-.2.2-.3.2-.5.1-.3-.1-1.2-.4-2.3-1.4-.8-.7-1.4-1.6-1.6-1.9-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.4 0-.5s-.6-1.4-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.1.2 1.8 2.8 4.4 3.8.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.6-.6 1.8-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.5-.3Z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>
+  Suporte
+</a>
+
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Header scroll effect
+const header = document.getElementById('site-header');
+const headerInner = document.getElementById('header-inner');
+function onScroll() {
+  const scrolled = window.scrollY > 12;
+  header.classList.toggle('py-3', scrolled);
+  header.classList.toggle('py-5', !scrolled);
+  if (scrolled) {
+    headerInner.classList.add('glass-dark','mx-4','shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)]','sm:mx-auto');
+    headerInner.classList.remove('bg-transparent');
+  } else {
+    headerInner.classList.remove('glass-dark','mx-4','shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)]','sm:mx-auto');
+    headerInner.classList.add('bg-transparent');
+  }
+}
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+
+// Mobile menu
+const menuBtn = document.getElementById('menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+const iconOpen = document.getElementById('menu-icon-open');
+const iconClose = document.getElementById('menu-icon-close');
+let menuOpen = false;
+function toggleMenu(force) {
+  menuOpen = force !== undefined ? force : !menuOpen;
+  mobileMenu.classList.toggle('hidden', !menuOpen);
+  iconOpen.classList.toggle('hidden', menuOpen);
+  iconClose.classList.toggle('hidden', !menuOpen);
+  document.body.style.overflow = menuOpen ? 'hidden' : '';
+}
+menuBtn.addEventListener('click', () => toggleMenu());
+document.querySelectorAll('.mobile-link').forEach(el => el.addEventListener('click', () => toggleMenu(false)));
+
+// Features grid
+const FEATURES = [
+  { title: "Cadastro de animais", desc: "Fichas completas de cada animal, com fotos, características e histórico centralizado.", icon: '<circle cx="6.5" cy="9.5" r="1.75"/><circle cx="11.5" cy="6.5" r="1.75"/><circle cx="16.5" cy="7.5" r="1.75"/><circle cx="19.5" cy="12" r="1.75"/><path d="M8 20c-1.7 0-3-1.2-3-2.8 0-2 1.9-3.4 3.8-4.6 1-.6 1.9-1.4 3-1.4s2 .8 3 1.4c2 1.2 4.2 2.4 4.2 4.6 0 1.6-1.5 2.8-3.2 2.8-1.4 0-2-.6-3.8-.6S9.4 20 8 20Z"/>' },
+  { title: "Pedigree", desc: "Documentação de pedigree organizada e pronta para consulta ou emissão.", icon: '<path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M14 3.5V8h4"/><path d="M8.5 12.5h7M8.5 15.5h7M8.5 18h4"/>' },
+  { title: "Árvore genealógica", desc: "Visualize gerações, ancestrais e linhagens completas em poucos cliques.", icon: '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v3.5a1.5 1.5 0 0 0 1.5 1.5H10M18 7v3.5A1.5 1.5 0 0 1 16.5 12H14M12 14v3M6 17v-1.5A1.5 1.5 0 0 1 7.5 14H10M18 17v-1.5a1.5 1.5 0 0 0-1.5-1.5H14"/>' },
+  { title: "Controle de cruzamentos", desc: "Planeje cruzamentos, acompanhe gestações e registre ninhadas com precisão.", icon: '<path d="M12 3.5c-3.5 3-6 6.7-6 10a6 6 0 0 0 12 0c0-3.3-2.5-7-6-10Z"/><circle cx="12" cy="13.5" r="2.2"/>' },
+  { title: "Vacinas", desc: "Calendário de vacinação com lembretes automáticos — nada passa despercebido.", icon: '<path d="M12 20.5s-7.5-4.6-9.8-9.4C.7 7.7 2.3 4 6 4c2 0 3.4 1 4 2.3C10.6 5 12 4 14 4c3.7 0 5.3 3.7 3.8 7.1-2.3 4.8-9.8 9.4-9.8 9.4Z"/><path d="M4.5 11h2.3l1.4-2.6L10 13l1.6-3.4h1.7l1 1.4H17"/>' },
+  { title: "Saúde", desc: "Histórico clínico, exames e observações veterinárias em um só lugar.", icon: '<path d="M4 20V10M10 20V4M16 20v-7M20 20H4"/>' },
+  { title: "Financeiro", desc: "Receitas, despesas e assinaturas com visão clara do caixa do criatório.", icon: '<path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h11a1 1 0 0 1 1 1v2"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><circle cx="16.5" cy="13.5" r="1.25"/>' },
+  { title: "Reservas", desc: "Gerencie a fila de interessados e reservas de filhotes de forma organizada.", icon: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/><path d="M7.5 13.5h2M11 13.5h2M14.5 13.5h2M7.5 17h2M11 17h2"/>' },
+  { title: "Clientes", desc: "Cadastro de clientes com histórico de conversas, compras e preferências.", icon: '<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5.5 5.5-5.5S14.5 17 14.5 20"/><circle cx="17" cy="8.5" r="2.3"/><path d="M15.8 14.7c2.5.4 4.2 2.6 4.2 5.3"/>' },
+  { title: "Portal do cliente", desc: "Um espaço dedicado para o cliente acompanhar o processo em tempo real.", icon: '<rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M3.5 8.5h17"/><circle cx="6.3" cy="6.2" r="0.6" fill="currentColor" stroke="none"/><circle cx="8.3" cy="6.2" r="0.6" fill="currentColor" stroke="none"/><path d="M7 12.5h10M7 16h6"/>' },
+  { title: "Contratos", desc: "Gere e envie contratos de venda em poucos minutos, direto da plataforma.", icon: '<path d="M7 3.5h7l4 4V19a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z"/><path d="M14 3.5V8h4"/><path d="M8.5 12.5h7M8.5 15.5h7M8.5 18h4"/>' },
+  { title: "Relatórios", desc: "Relatórios inteligentes para decisões melhores sobre o seu criatório.", icon: '<path d="M4 20V10M10 20V4M16 20v-7M20 20H4"/>' },
+];
+document.getElementById('features-grid').innerHTML = FEATURES.map(f => `
+  <div class="reveal group glass-card relative rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-glow-brand">
+    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-white/5 text-brand-light transition-all duration-300 group-hover:scale-110 group-hover:bg-gradient-to-br group-hover:from-brand-light group-hover:to-brand-dark group-hover:text-white">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${f.icon}</svg>
+    </span>
+    <h3 class="mt-4 font-display text-lg font-semibold text-ivory">${f.title}</h3>
+    <p class="mt-2 text-sm leading-relaxed text-ivory/55">${f.desc}</p>
+  </div>
+`).join('');
+
+// Benefits grid
+const BENEFITS = [
+  { title: "Economize tempo", desc: "Menos planilhas e anotações soltas — tudo centralizado e a poucos cliques de distância.", icon: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>' },
+  { title: "Organize seu criatório", desc: "Cada animal, cruzamento e ninhada documentado e fácil de encontrar.", icon: '<circle cx="6" cy="5" r="2"/><circle cx="18" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v3.5a1.5 1.5 0 0 0 1.5 1.5H10M18 7v3.5A1.5 1.5 0 0 1 16.5 12H14M12 14v3M6 17v-1.5A1.5 1.5 0 0 1 7.5 14H10M18 17v-1.5a1.5 1.5 0 0 0-1.5-1.5H14"/>' },
+  { title: "Nunca perca uma vacina", desc: "Lembretes automáticos garantem que a saúde dos animais esteja sempre em dia.", icon: '<path d="M12 20.5s-7.5-4.6-9.8-9.4C.7 7.7 2.3 4 6 4c2 0 3.4 1 4 2.3C10.6 5 12 4 14 4c3.7 0 5.3 3.7 3.8 7.1-2.3 4.8-9.8 9.4-9.8 9.4Z"/><path d="M4.5 11h2.3l1.4-2.6L10 13l1.6-3.4h1.7l1 1.4H17"/>' },
+  { title: "Controle financeiro", desc: "Enxergue receitas, despesas e assinaturas com clareza, sem surpresas no fim do mês.", icon: '<path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h11a1 1 0 0 1 1 1v2"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><circle cx="16.5" cy="13.5" r="1.25"/>' },
+  { title: "Atenda melhor seus clientes", desc: "Portal dedicado e histórico completo para um atendimento mais próximo e profissional.", icon: '<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5.5 5.5-5.5S14.5 17 14.5 20"/><circle cx="17" cy="8.5" r="2.3"/><path d="M15.8 14.7c2.5.4 4.2 2.6 4.2 5.3"/>' },
+  { title: "Relatórios inteligentes", desc: "Dados organizados para decisões melhores sobre reprodução, vendas e finanças.", icon: '<path d="M4 20V10M10 20V4M16 20v-7M20 20H4"/>' },
+];
+document.getElementById('benefits-grid').innerHTML = BENEFITS.map(b => `
+  <div class="reveal group glass-card rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-glow-brand">
+    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-brand-light transition-transform duration-300 group-hover:scale-110">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${b.icon}</svg>
+    </span>
+    <h3 class="mt-3 font-display text-base font-semibold text-ivory">${b.title}</h3>
+    <p class="mt-1.5 text-sm leading-relaxed text-ivory/55">${b.desc}</p>
+  </div>
+`).join('');
+
+// Testimonials
+const TESTIMONIALS = [
+  { name: "Renata Souza", kennel: "Canil Serra Dourada", quote: "Depois do CriaPet, parei de perder informação em planilha. O controle de vacinas sozinho já valeu a assinatura.", initials: "RS" },
+  { name: "Carlos Menezes", kennel: "Gatil Estrela do Sul", quote: "A árvore genealógica é o recurso que meus clientes mais elogiam. Dá muito mais confiança na hora da venda.", initials: "CM" },
+  { name: "Juliana Prado", kennel: "Canil Vale Verde", quote: "O financeiro e as reservas em um só painel mudaram a forma como eu organizo o mês inteiro do criatório.", initials: "JP" },
+];
+const star = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2.5l2.9 6.3 6.9.7-5.2 4.7 1.5 6.8-6.1-3.5-6.1 3.5 1.5-6.8-5.2-4.7 6.9-.7L12 2.5Z"/></svg>';
+document.getElementById('testimonials-grid').innerHTML = TESTIMONIALS.map(t => `
+  <div class="reveal glass-card flex flex-col rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-glow-brand">
+    <div class="flex gap-0.5 text-brand-light">${star.repeat(5)}</div>
+    <p class="mt-4 flex-1 text-sm leading-relaxed text-ivory/70">"${t.quote}"</p>
+    <div class="mt-6 flex items-center gap-3">
+      <span class="flex h-11 w-11 items-center justify-center rounded-full bg-brand-green/15 font-display text-sm font-semibold text-brand-light">${t.initials}</span>
+      <div><p class="text-sm font-semibold text-ivory">${t.name}</p><p class="text-xs text-ivory/45">${t.kennel}</p></div>
+    </div>
+  </div>
+`).join('');
+
+// FAQ
+const FAQS = [
+  { q: "Preciso instalar algum programa?", a: "Não. O CriaPet funciona direto no navegador, em qualquer computador ou celular com internet." },
+  { q: "Meus dados ficam seguros?", a: "Sim. Seus dados ficam armazenados com segurança e o acesso é protegido por login individual." },
+  { q: "Posso cancelar quando quiser?", a: "Sim, não há contrato de fidelidade. Você pode cancelar sua assinatura a qualquer momento." },
+  { q: "O CriaPet serve para gatos e outros animais?", a: "Sim. Além de cães, o sistema atende gatis e outros animais de pedigree." },
+  { q: "Como funciona o período de teste grátis?", a: "Você tem 14 dias grátis para usar a plataforma, sem precisar cadastrar cartão de crédito." },
+];
+document.getElementById('faq-list').innerHTML = FAQS.map((f, i) => `
+  <div class="px-6">
+    <button type="button" class="faq-btn flex w-full items-center justify-between gap-4 py-5 text-left" data-index="${i}">
+      <span class="font-display text-base font-medium text-ivory">${f.q}</span>
+      <svg class="faq-chevron shrink-0 text-brand-light transition-transform duration-300" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <div class="faq-panel grid overflow-hidden transition-all duration-300 ease-out" style="grid-template-rows:0fr; opacity:0;">
+      <p class="min-h-0 overflow-hidden pb-5 text-sm leading-relaxed text-ivory/55">${f.a}</p>
+    </div>
+  </div>
+`).join('');
+
+function setFaqOpen(index) {
+  document.querySelectorAll('.faq-btn').forEach(btn => {
+    const i = Number(btn.dataset.index);
+    const panel = btn.nextElementSibling;
+    const chevron = btn.querySelector('.faq-chevron');
+    const isOpen = i === index;
+    panel.style.gridTemplateRows = isOpen ? '1fr' : '0fr';
+    panel.style.opacity = isOpen ? '1' : '0';
+    chevron.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  });
+}
+document.getElementById('faq-list').addEventListener('click', (e) => {
+  const btn = e.target.closest('.faq-btn');
+  if (!btn) return;
+  const index = Number(btn.dataset.index);
+  const panel = btn.nextElementSibling;
+  const currentlyOpen = panel.style.gridTemplateRows === '1fr';
+  setFaqOpen(currentlyOpen ? -1 : index);
+});
+setFaqOpen(0);
+
+// Scroll reveal
+const revealEls = document.querySelectorAll('.reveal, .reveal-scale');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in');
+      io.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.15 });
+revealEls.forEach(el => io.observe(el));
+
+// Animated counters
+const counters = document.querySelectorAll('.counter');
+const counterIO = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const el = entry.target;
+      const target = Number(el.dataset.target);
+      const suffix = el.dataset.suffix || '';
+      const duration = 1400;
+      const start = performance.now();
+      function tick(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(eased * target).toLocaleString('pt-BR') + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+      counterIO.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+counters.forEach(el => counterIO.observe(el));
+
+// Revenue chart
+const ctx = document.getElementById('revenueChart');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: ['Fev','Mar','Abr','Mai','Jun','Jul'],
+    datasets: [{
+      data: [14200, 16800, 15900, 19500, 21100, 24380],
+      borderColor: '#67C46B',
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.35,
+      fill: true,
+      backgroundColor: (context) => {
+        const chart = context.chart;
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return null;
+        const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+        gradient.addColorStop(0, 'rgba(103,196,107,0.45)');
+        gradient.addColorStop(1, 'rgba(103,196,107,0)');
+        return gradient;
+      },
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#161B18',
+        titleColor: '#F6F4EF',
+        bodyColor: '#F6F4EF',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+        callbacks: {
+          label: (item) => 'R$ ' + item.raw.toLocaleString('pt-BR'),
+        }
+      }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: 'rgba(246,244,239,0.5)', font: { size: 11 } } },
+      y: { display: false }
+    }
+  }
+});
+</script>
+</body>
+</html>
