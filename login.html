@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Entrar — CriaPet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          graphite: "#22252A",
+          ivory: "#F6F4EF",
+          olive: "#6B7A5E",
+          clay: "#B4682E",
+        },
+        fontFamily: {
+          display: ["Fraunces", "Georgia", "serif"],
+          sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #F6F4EF; color: #22252A; }
+  .font-display { font-family: 'Fraunces', Georgia, serif; }
+  .nav-link { position: relative; transition: color .2s ease; }
+  .nav-link::after { content:""; position:absolute; left:0; bottom:-2px; width:0%; height:1px; background:#B4682E; transition:width .25s ease; }
+  .nav-link:hover::after { width:100%; }
+  .nav-link:hover { color:#B4682E; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<a href="criapet-landing.html" class="fixed top-6 left-6 flex items-center gap-2 text-sm font-medium text-graphite/70 hover:text-graphite">
+  ← Voltar ao site
+</a>
+
+<main class="min-h-screen flex items-center justify-center px-4">
+  <form id="login-form" class="w-full max-w-sm space-y-5">
+    <h1 class="font-display text-3xl mb-4">Entrar</h1>
+
+    <p id="feedback" class="hidden text-sm rounded-lg px-3 py-2"></p>
+
+    <div>
+      <label class="block text-sm mb-1">E-mail</label>
+      <input type="email" required class="w-full rounded-lg border border-graphite/20 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+
+    <div>
+      <label class="block text-sm mb-1">Senha</label>
+      <input type="password" required class="w-full rounded-lg border border-graphite/20 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+
+    <button type="submit" class="w-full rounded-full bg-graphite text-ivory py-2 hover:bg-clay transition-colors">
+      Entrar
+    </button>
+
+    <div class="flex justify-between text-sm text-graphite/70">
+      <a href="#" class="nav-link">Esqueci minha senha</a>
+      <a href="cadastro.html" class="nav-link">Criar conta</a>
+    </div>
+  </form>
+</main>
+
+<script>
+document.getElementById('login-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const feedback = document.getElementById('feedback');
+  feedback.textContent = "Preview visual — o login real depende do backend do projeto (auth + banco de dados).";
+  feedback.className = "text-sm rounded-lg px-3 py-2 bg-amber-100 text-amber-800 block";
+});
+</script>
+</body>
+</html>

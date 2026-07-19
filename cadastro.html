@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Criar conta — CriaPet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: { graphite: "#22252A", ivory: "#F6F4EF", olive: "#6B7A5E", clay: "#B4682E" },
+        fontFamily: {
+          display: ["Fraunces", "Georgia", "serif"],
+          sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #F6F4EF; color: #22252A; }
+  .font-display { font-family: 'Fraunces', Georgia, serif; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<a href="criapet-landing.html" class="fixed top-6 left-6 flex items-center gap-2 text-sm font-medium text-graphite/70 hover:text-graphite">
+  ← Voltar ao site
+</a>
+
+<main class="min-h-screen flex items-center justify-center px-4 py-12">
+  <form id="cadastro-form" class="w-full max-w-sm space-y-4">
+    <h1 class="font-display text-3xl mb-4">Criar conta</h1>
+
+    <p id="feedback" class="hidden text-sm rounded-lg px-3 py-2"></p>
+
+    <div>
+      <label class="block text-sm mb-1">Nome do canil/gatil</label>
+      <input required class="w-full rounded-lg border border-graphite/20 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+    <div>
+      <label class="block text-sm mb-1">Seu nome</label>
+      <input required class="w-full rounded-lg border border-graphite/20 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+    <div>
+      <label class="block text-sm mb-1">E-mail</label>
+      <input type="email" required class="w-full rounded-lg border border-graphite/20 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+    <div>
+      <label class="block text-sm mb-1">Telefone (WhatsApp)</label>
+      <input required class="w-full rounded-lg border border-graphite/20 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+    <div>
+      <label class="block text-sm mb-1">Senha</label>
+      <input type="password" required class="w-full rounded-lg border border-graphite/20 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-clay" />
+    </div>
+
+    <button type="submit" class="w-full rounded-full bg-graphite text-ivory py-2 hover:bg-clay transition-colors">
+      Criar conta e escolher plano
+    </button>
+  </form>
+</main>
+
+<script>
+document.getElementById('cadastro-form').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const feedback = document.getElementById('feedback');
+  feedback.textContent = "Preview visual — redirecionando para a tela de planos...";
+  feedback.className = "text-sm rounded-lg px-3 py-2 bg-amber-100 text-amber-800 block";
+  setTimeout(() => { window.location.href = "planos.html"; }, 900);
+});
+</script>
+</body>
+</html>
